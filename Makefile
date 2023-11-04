@@ -1,9 +1,9 @@
 CFLAGS=-std=c11 -g -static
 
-albertcc:	albertcc.c
-test:	albertcc
+sodium:	sodium.c
+test:	sodium
 		./test.sh
 clean:
-		rm -f albertcc *.o *~ tmp*
+		rm -f sodium *.o *~ tmp*
 
 .PHONY: test clean
