@@ -22,6 +22,8 @@ struct Token{
     char *str; //標記文字列
 };
 
+char *user_input;
+
 //正在處理的標記
 Token *token;
 
@@ -33,6 +35,20 @@ void error(char *fmt,...){
     vfprintf(stderr,fmt,ap);
     fprintf(stderr,"\n");
     exit(1);
+}
+
+// Reports an error location and exit.
+void error_at(char *loc, char *fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+
+  int pos = loc - user_input;
+  fprintf(stderr, "%s\n", user_input);
+  fprintf(stderr, "%*s", pos, ""); // print pos spaces.
+  fprintf(stderr, "^ ");
+  vfprintf(stderr, fmt, ap);
+  fprintf(stderr, "\n");
+  exit(1);
 }
 //下一個標記為符合預期的符號時，讀入一個標記並往下繼續，
 //回傳ture。否則0回傳false。
@@ -46,14 +62,14 @@ bool consume(char op){
 //否則警告為錯誤。
 void expect(char op){
     if(token->kind!=TK_RESERVED||token->str[0]!=op)
-        error("不是'%c'",op);
+        error_at(token->str, "不是'%c'", op);
     token=token->next;
 }
 // 下一個標記為數值時，讀入一個標記並往下繼續，
 //否則警告為錯誤。
 int expect_number(){
     if(token->kind!=TK_NUM)
-        error("不是數值");
+        error_at(token->str, "不是數值");
     int val=token->val;
     token=token->next;
     return val;
@@ -72,7 +88,8 @@ Token *new_token(TokenKind kind,Token *cur,char *str){
     return tok;
 }
 //將輸入文字列p作標記解析並回傳標記連結串列
-Token *tokenize(char *p){
+Token *tokenize(){
+    char *p = user_input;
     Token head;
     head.next=NULL;
     Token *cur=&head;
@@ -95,7 +112,7 @@ Token *tokenize(char *p){
             continue;
         }
         
-        error("標記解析失敗");
+        error_at(p, "預計有一個數字");
     }
     
     new_token(TK_EOF,cur,p);
@@ -111,7 +128,8 @@ int main(int argc,char **argv)
     }
 
     //標記解析
-    token=tokenize(argv[1]);
+    user_input = argv[1];
+    token=tokenize();
 
     //輸出前半部份組合語言指令
     printf(".intel_syntax noprefix\n");
