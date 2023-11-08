@@ -6,7 +6,7 @@
 #include<string.h>
 
 //
-//分詞器 Tokenizer.c
+//標記解析器 Tokenizer.c
 //
 
 typedef enum{
@@ -37,7 +37,7 @@ extern char *user_input;
 extern Token *token;
 
 //
-//解析器 parse.c
+//分析器 parse.c
 //
 
 typedef enum {
@@ -66,7 +66,7 @@ struct Node {
 Node *program(void);
 
 //
-//程式碼產生器 codegen.c
+//指令產生器 codegen.c
 //
 
 void codegen(Node *node);
