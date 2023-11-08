@@ -41,16 +41,17 @@ extern Token *token;
 //
 
 typedef enum {
-    ND_ADD,     // +
-    ND_SUB,     // -
-    ND_MUL,     // *
-    ND_DIV,     // /
-    ND_EQ,      //==
-    ND_NE,      //!=
-    ND_LT,      //<
-    ND_LE,      //<= 
-    ND_RETURN,  //"return"
-    ND_NUM,     // 整數
+    ND_ADD,         // +
+    ND_SUB,         // -
+    ND_MUL,         // *
+    ND_DIV,         // /
+    ND_EQ,          //==
+    ND_NE,          //!=
+    ND_LT,          //<
+    ND_LE,          //<= 
+    ND_RETURN,      //"return"
+    ND_EXPR_STMT,   //表達語句 Expression statement
+    ND_NUM,         // 整數
 } NodeKind;
 
 //AST 節點類型
