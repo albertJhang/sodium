@@ -11,8 +11,9 @@
 
 typedef enum{
     TK_RESERVED,//關鍵字或標點符號 Keywords or punctuators
-    TK_NUM,//整數文字 Integer literals
-    TK_EOF,//文件結束標記 End-of-file markers
+    TK_IDENT,   //身份識別 Identifiers
+    TK_NUM,     //整數文字 Integer literals
+    TK_EOF,     //文件結束標記 End-of-file markers
 } TokenKind;
 
 //標記型態 Token type
@@ -28,6 +29,7 @@ struct Token{
 void error(char *fmt, ...);
 void error_at(char *loc, char *fmt, ...);
 bool consume(char *op);
+Token *consume_ident(void);
 void expect(char *op);
 long expect_number(void);
 bool at_eof(void);
@@ -45,23 +47,26 @@ typedef enum {
     ND_SUB,         // -
     ND_MUL,         // *
     ND_DIV,         // /
-    ND_EQ,          //==
-    ND_NE,          //!=
-    ND_LT,          //<
-    ND_LE,          //<= 
-    ND_RETURN,      //"return"
-    ND_EXPR_STMT,   //表達語句 Expression statement
+    ND_EQ,          // ==
+    ND_NE,          // !=
+    ND_LT,          // <
+    ND_LE,          // <=
+    ND_ASSIGN,      // = 
+    ND_RETURN,      // "return"
+    ND_EXPR_STMT,   // 表達語句 Expression statement
+    ND_VAR,         // 變數 Variable
     ND_NUM,         // 整數
 } NodeKind;
 
 //AST 節點類型
 typedef struct Node Node;
 struct Node {
-    NodeKind kind; //節點種類
-    Node *next;    //下個節點
-    Node *lhs;     //左手邊
-    Node *rhs;     //右手邊
-    int val;       //如果 kind == ND_NUM 則使用
+    NodeKind kind; // 節點種類
+    Node *next;    // 下個節點
+    Node *lhs;     // 左手邊
+    Node *rhs;     // 右手邊
+    char name;     // 如果 kind == ND_NUM 則使用 Used if kind == ND_VAR
+    int val;       // 如果 kind == ND_NUM 則使用 Used if kind == ND_NUM
 };
 
 Node *program(void);

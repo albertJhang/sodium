@@ -50,4 +50,7 @@ try 1 'return 1; 2; 3;'
 try 2 '1; return 2; 3;'
 try 3 '1; 2; return 3;'
 
+try 3 'a=3; return a;'
+try 8 'a=3; z=5; return a+z;'
+
 echo OK
