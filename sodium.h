@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include<ctype.h>
 #include<stdarg.h>
 #include<stdbool.h>
@@ -9,6 +10,7 @@
 //標記解析器 Tokenizer.c
 //
 
+// 標記 Token
 typedef enum{
     TK_RESERVED,//關鍵字或標點符號 Keywords or punctuators
     TK_IDENT,   //身份識別 Identifiers
@@ -39,8 +41,17 @@ extern char *user_input;
 extern Token *token;
 
 //
-//分析器 parse.c
+// 分析器 parse.c
 //
+
+// 區域變數 Local variable
+typedef struct Var Var;
+struct Var {
+    Var *next;
+    char *name; // 變數名稱 Variable name
+    int offset; // 與RBP的偏移 Offset from RBP 
+    
+};
 
 typedef enum {
     ND_ADD,         // +
@@ -65,14 +76,21 @@ struct Node {
     Node *next;    // 下個節點
     Node *lhs;     // 左手邊
     Node *rhs;     // 右手邊
-    char name;     // 如果 kind == ND_NUM 則使用 Used if kind == ND_VAR
-    int val;       // 如果 kind == ND_NUM 則使用 Used if kind == ND_NUM
+    Var *var;     // 如果 kind == ND_NUM 則使用 Used if kind == ND_VAR
+    long val;       // 如果 kind == ND_NUM 則使用 Used if kind == ND_NUM
 };
 
-Node *program(void);
+typedef struct Function Function;
+struct Function {
+    Node *node;
+    Var *locals;
+    int stack_size;
+};
+
+Function *program(void);
 
 //
 //指令產生器 codegen.c
 //
 
-void codegen(Node *node);
+void codegen(Function *prog);

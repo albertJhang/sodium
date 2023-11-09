@@ -3,8 +3,7 @@
 // 將給定節點的位址推送堆疊 Pushes the given node's address to the stack.
 static void gen_addr(Node *node) {
     if (node->kind == ND_VAR) {
-        int offset = (node->name - 'a' + 1) * 8;
-        printf("    lea rax, [rbp-%d]\n", offset);
+        printf("    lea rax, [rbp-%d]\n", node->var->offset);
         printf("    push rax\n");
         return;
     }
@@ -29,7 +28,7 @@ static void store(void) {
 static void gen(Node *node) {
     switch (node->kind) {
     case ND_NUM: 
-        printf("    push %d\n", node->val);
+        printf("    push %ld\n", node->val);
         return ;
     case ND_EXPR_STMT:
         gen(node->lhs);
@@ -57,7 +56,7 @@ static void gen(Node *node) {
     printf("    pop rdi\n");
     printf("    pop rax\n");
 
-    switch(node->kind) {
+    switch (node->kind) {
     case ND_ADD:
         printf("    add rax, rdi\n");
         break;
@@ -96,7 +95,7 @@ static void gen(Node *node) {
     printf("    push rax\n");
 }
 
-void codegen(Node *node) {
+void codegen(Function *prog) {
     printf(".intel_syntax noprefix\n");
     printf(".global main\n");
     printf("main:\n");
@@ -104,10 +103,11 @@ void codegen(Node *node) {
     //序幕 Prologue
     printf("    push rbp\n");
     printf("    mov rbp, rsp\n");
-    printf("    sub rsp, 208\n");
+    printf("    sub rsp, %d\n", prog->stack_size);
 
-    for (Node *n = node; n; n = n ->next) 
-        gen(n);
+    // 發出代碼 Emit code
+    for (Node *node = prog->node; node; node = node->next) 
+        gen(node);
 
     //結語 Epilogue
     printf(".L.return:\n");
