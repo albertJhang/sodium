@@ -64,6 +64,7 @@ typedef enum {
     ND_LE,          // <=
     ND_ASSIGN,      // = 
     ND_RETURN,      // "return"
+    ND_IF,          // "if"
     ND_EXPR_STMT,   // 表達語句 Expression statement
     ND_VAR,         // 變數 Variable
     ND_NUM,         // 整數
@@ -74,10 +75,17 @@ typedef struct Node Node;
 struct Node {
     NodeKind kind; // 節點種類
     Node *next;    // 下個節點
+
     Node *lhs;     // 左手邊
     Node *rhs;     // 右手邊
-    Var *var;     // 如果 kind == ND_NUM 則使用 Used if kind == ND_VAR
-    long val;       // 如果 kind == ND_NUM 則使用 Used if kind == ND_NUM
+
+    // "if" 表達式
+    Node *cond;
+    Node *then;
+    Node *els;
+    
+    Var *var;      // 如果 kind == ND_VAR 則使用 Used if kind == ND_VAR
+    long val;      // 如果 kind == ND_NUM 則使用 Used if kind == ND_NUM
 };
 
 typedef struct Function Function;

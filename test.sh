@@ -56,4 +56,9 @@ try 3 '1; 2; return 3;'
 try 3 'foo=3; return foo;'
 try 8 'foo123=3; bar=5; return foo123+bar;'
 
+try 3 'if (0) return 2; return 3;'
+try 3 'if (1-1) return 2; return 3;'
+try 2 'if (1) return 2; return 2;'
+try 2 'if (2-1) return 2; return 3;'
+
 echo OK
