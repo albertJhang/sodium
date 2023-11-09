@@ -61,4 +61,6 @@ try 3 'if (1-1) return 2; return 3;'
 try 2 'if (1) return 2; return 2;'
 try 2 'if (2-1) return 2; return 3;'
 
+try 10 'i=0; while(i<10) i=i+1; return i;'
+
 echo OK
