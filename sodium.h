@@ -67,6 +67,7 @@ typedef enum {
     ND_IF,          // "if"
     ND_WHILE,       // "while"
     ND_FOR,         // "for"
+    ND_BLOCK,       // "block"
     ND_EXPR_STMT,   // 表達語句 Expression statement
     ND_VAR,         // 變數 Variable
     ND_NUM,         // 整數
@@ -88,6 +89,8 @@ struct Node {
     Node *init;
     Node *inc;
     
+    //Block
+    Node *body;
     Var *var;      // 如果 kind == ND_VAR 則使用 Used if kind == ND_VAR
     long val;      // 如果 kind == ND_NUM 則使用 Used if kind == ND_NUM
 };
