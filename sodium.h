@@ -66,6 +66,7 @@ typedef enum {
     ND_RETURN,      // "return"
     ND_IF,          // "if"
     ND_WHILE,       // "while"
+    ND_FOR,         // "for"
     ND_EXPR_STMT,   // 表達語句 Expression statement
     ND_VAR,         // 變數 Variable
     ND_NUM,         // 整數
@@ -80,10 +81,12 @@ struct Node {
     Node *lhs;     // 左手邊
     Node *rhs;     // 右手邊
 
-    // "if" or "while" 表達式
+    // "if", "while" or "for" 表達式
     Node *cond;
     Node *then;
     Node *els;
+    Node *init;
+    Node *inc;
     
     Var *var;      // 如果 kind == ND_VAR 則使用 Used if kind == ND_VAR
     long val;      // 如果 kind == ND_NUM 則使用 Used if kind == ND_NUM

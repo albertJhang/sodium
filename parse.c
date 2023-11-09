@@ -86,6 +86,7 @@ static Node *read_expr_stmt(void) {
 //stmt = "return" expr ";"
 //     | "if" "(" expr ")" stmt ("else" stmt)?
 //     | "while" "(" expr ")" stmt
+//     | "for "(" expr? ";" expr? ";" expr? ")" stmt
 //     | expr ";"
 static Node *stmt(void) {
   if(consume("return")){
@@ -113,6 +114,26 @@ static Node *stmt(void) {
     node->then = stmt();
     return node;
   }
+
+if (consume("for")) {
+  Node *node = new_node(ND_FOR);
+  expect("(");
+  if (!consume(";")){
+    node->init = read_expr_stmt();
+    expect(";");
+  }
+  if (!consume(";")) {
+    node->cond = expr();
+    expect(";");
+  }
+  if (!consume(")")) {
+    node->inc = read_expr_stmt();
+    expect(")");
+  }
+  node->then = stmt();
+  return node;
+  
+}
 
   Node *node = read_expr_stmt();
   expect(";");
