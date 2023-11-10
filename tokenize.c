@@ -1,9 +1,5 @@
 #include "sodium.h"
 
-//
-// Tokenizer
-//
-
 char *user_input;
 Token *token;
 
@@ -63,6 +59,15 @@ long expect_number(void) {
   long val = token->val;
   token = token->next;
   return val;
+}
+
+// 確保當前令牌是TK_IDENT。 Ensure that the current token is TK_IDENT.
+char *expect_ident(void) {
+  if (token->kind != TK_IDENT)
+    error_at(token->str, "expect an identifier");
+  char *s = strndup(token->str, token->len);
+  token = token->next;
+  return s;
 }
 
 bool at_eof(void) {
