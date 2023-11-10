@@ -95,7 +95,8 @@ struct Node {
 
     // 函數呼叫
     char *funcname;
-    
+    Node *args;
+
     Var *var;      // 如果 kind == ND_VAR 則使用 Used if kind == ND_VAR
     long val;      // 如果 kind == ND_NUM 則使用 Used if kind == ND_NUM
 };
