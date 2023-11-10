@@ -48,12 +48,17 @@ extern Token *token;
 // 區域變數 Local variable
 typedef struct Var Var;
 struct Var {
-    Var *next;
     char *name; // 變數名稱 Variable name
     int offset; // 與RBP的偏移 Offset from RBP 
-    
 };
 
+typedef struct VarList VarList;
+struct VarList {
+    VarList *next;
+    Var *var;
+};
+
+//AST node
 typedef enum {
     ND_ADD,         // +
     ND_SUB,         // -
@@ -106,8 +111,10 @@ typedef struct Function Function;
 struct Function {
     Function *next;
     char *name;
+    VarList *params;
+
     Node *node;
-    Var *locals;
+    VarList *locals;
     int stack_size;
 };
 
