@@ -1,10 +1,15 @@
 #!/bin/bash
+cat <<EOF | gcc -xc -c -o tmp2.o -
+int ret3() { return 3; }
+int ret5() { return 5; }
+EOF
+
 try() {
   expected="$1"
   input="$2"
 
   ./sodium "$input" > tmp.s
-  gcc -o tmp tmp.s
+  gcc -o tmp tmp.s tmp2.o
   ./tmp
   actual="$?"
 
@@ -69,4 +74,6 @@ try 55 'i=0; j=0; while(i<=10) {j=i+j; i=i+1;} return j;'
 try 55 'i=0; j=0; for (i=0; i<=10; i=i+1) j=i+j; return j;'
 try 3 'for (;;) return 3; return 5;'
 
+try 3 'return ret3();'
+try 5 'return ret5();'
 echo OK
