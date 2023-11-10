@@ -13,7 +13,7 @@ static void gen_addr(Node *node) {
         return;
     }
 
-    error("not an lvalue");
+    error_tok(node->tok, "not an lvalue");
 }
 
 static void load(void) {
@@ -204,7 +204,7 @@ void codegen(Function *prog) {
             Var *var =vl->var;
             printf("    mov [rbp-%d], %s\n", var->offset, argreg[i++]);
         }
-        
+
         // 發出代碼 Emit code
         for (Node *node = fn->node; node; node = node->next) 
             gen(node);

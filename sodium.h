@@ -30,7 +30,8 @@ struct Token{
 
 void error(char *fmt, ...);
 void error_at(char *loc, char *fmt, ...);
-bool consume(char *op);
+void error_tok(Token *tok, char *fmt, ...);
+Token *consume(char *op);
 Token *consume_ident(void);
 void expect(char *op);
 long expect_number(void);
@@ -85,6 +86,7 @@ typedef struct Node Node;
 struct Node {
     NodeKind kind; // 節點種類
     Node *next;    // 下個節點
+    Token *tok;    // 代表標記 Representative token
 
     Node *lhs;     // 左手邊
     Node *rhs;     // 右手邊
