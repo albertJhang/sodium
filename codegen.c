@@ -112,7 +112,22 @@ static void gen(Node *node) {
         for (int i = nargs - 1; i >= 0; i--)
         printf("  pop %s\n", argreg[i]);
 
+        // 我們需要先將 RSP 與 16 位元組邊界對齊呼叫函數，因為這是 ABI 要求。
+        // we need to align RSP to a 16byte boundary before calling a function because it is an ABI requirement.    
+        // 對於可變參數函數，RAX設定為0 RAX is set to 0for variadiv function.
+        int seq = labelseq++;
+        printf("    mov rax, rsp\n");
+        printf("    and rax, 15\n");
+        printf("    jnz .L.call.%d\n", seq);
+        printf("    mov rax, 0\n");
         printf("    call %s\n", node->funcname);
+        printf("    jmp .L.end.%d\n", seq);
+        printf(".L.call.%d:\n", seq);
+        printf("    sub rsp, 8\n");
+        printf("    mov rax, 0\n");
+        printf("    call %s\n", node->funcname);
+        printf("    add rsp, 8\n");
+        printf(".L.end.%d:\n", seq);
         printf("    push rax\n");
         return;
     }
