@@ -47,7 +47,15 @@ Token *consume(char *op) {
   return t;
 }
 
-// 如果當前令牌是消耗符，則使用它 Consumes the current token if it is an identifier.
+// 如果當前標記與給定字串匹配，則傳回true。 Returns true if the current token matches a given string.
+Token *peek(char *s) {
+  if (token->kind != TK_RESERVED || strlen(s) != token->len || 
+      strncmp(token->str, s, token->len))
+    return NULL;
+  return token;
+}
+
+// 如果當前令牌是消耗符，則使用它。 Consumes the current token if it is an identifier.
 Token *consume_ident(void) {
   if (token->kind != TK_IDENT)
     return NULL;
@@ -56,11 +64,10 @@ Token *consume_ident(void) {
   return t;
 }
 
-// Ensure that the current token is `op`.
-void expect(char *op) {
-  if (token->kind != TK_RESERVED || strlen(op) != token->len ||
-      strncmp(token->str, op, token->len))
-    error_tok(token, "expected \"%s\"", op);
+// 確保當前標記是給定的字串。 Ensure that the current token is a given string
+void expect(char *s) {
+  if (!peek(s))
+    error_tok(token, "expected \"%s\"", s);
   token = token->next;
 }
 
@@ -110,7 +117,7 @@ static bool is_alnum(char c) {
 
 static char *starts_with_reserved(char *p) {
   // Keyword
-  static char *kw[] = {"return", "if", "else", "while", "for"};
+  static char *kw[] = {"return", "if", "else", "while", "for", "int"};
 
   for (int i = 0; i < sizeof(kw) / sizeof(*kw); i++) {
     int len = strlen(kw[i]);
