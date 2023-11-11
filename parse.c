@@ -128,10 +128,16 @@ Program *program(void) {
   return prog;
 }
 
-// 基本型別="int" "*"* basetype = "int" "*"*
+// 基本型別="int" "*"* basetype = ("char" | "int") "*"*
 static Type *basetype(void) {
-  expect("int");
-  Type *ty = int_type;
+  Type *ty;
+  if (consume("char")) {
+    ty = char_type;
+} else { 
+    expect("int");
+    ty = int_type;
+}
+
   while (consume("*"))
     ty = pointer_to(ty);
   return ty;
@@ -230,6 +236,11 @@ static Node *read_expr_stmt(void) {
   return new_unary(ND_EXPR_STMT, expr(), tok);
 }
 
+// 如果下一個標記代表一種類型，則傳回true。 Returns true if the next token represents a type.
+static bool is_typename(void) {
+  return peek("char") || peek("int");
+}
+
 static Node *stmt(void) {
   Node *node = stmt2();
   add_type(node);
@@ -304,7 +315,7 @@ if (tok = consume("{")) {
   return node;
 }
 
-if (tok = peek("int"))
+if (is_typename())
   return declaration();
 
   Node *node = read_expr_stmt();
