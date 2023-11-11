@@ -15,10 +15,11 @@ typedef struct Type Type;
 
 // 標記 Token
 typedef enum{
-    TK_RESERVED,//關鍵字或標點符號 Keywords or punctuators
-    TK_IDENT,   //身份識別 Identifiers
-    TK_NUM,     //整數文字 Integer literals
-    TK_EOF,     //文件結束標記 End-of-file markers
+    TK_RESERVED,// 關鍵字或標點符號 Keywords or punctuators
+    TK_IDENT,   // 身份識別 Identifiers
+    TK_STR,     // 字串文字 String literals
+    TK_NUM,     // 整數文字 Integer literals
+    TK_EOF,     // 文件結束標記 End-of-file markers
 } TokenKind;
 
 //標記型態 Token type
@@ -29,6 +30,9 @@ struct Token{
     int val;        //如果kind為TK_NUM，則為數值 If kind is TK_NUM, it's value
     char *str;      //標記文字列 Token string
     int len;        //標記長度 Token length
+
+    char *contents; //字串文字內容，包括終止"\0" String literal contents including terminating '\0'
+    char cont_len;  // string literal langth
 };
 
 void error(char *fmt, ...);
@@ -58,7 +62,11 @@ struct Var {
     bool is_local;  // local or global
 
     // Local variable
-    int offset; // 與RBP的偏移 Offset from RBP 
+    int offset; // 與RBP的偏移 Offset from RBP
+
+    // 全域變數 Global variable
+    char *contents;
+    int cont_len; 
 };
 
 typedef struct VarList VarList;
