@@ -50,11 +50,14 @@ extern Token *token;
 // 分析器 parse.c
 //
 
-// 區域變數 Local variable
+// Variable
 typedef struct Var Var;
 struct Var {
-    char *name; // 變數名稱 Variable name
-    Type *ty;   // Type
+    char *name;     // 變數名稱 Variable name
+    Type *ty;       // Type
+    bool is_local;  // local or global
+
+    // Local variable
     int offset; // 與RBP的偏移 Offset from RBP 
 };
 
@@ -132,7 +135,12 @@ struct Function {
     int stack_size;
 };
 
-Function *program(void);
+typedef struct {
+    VarList *globals;
+    Function *fns;
+} Program;
+
+Program *program(void);
 
 //
 // typing.c
@@ -158,4 +166,4 @@ void add_type(Node *node);
 //指令產生器 codegen.c
 //
 
-void codegen(Function *prog);
+void codegen(Program *prog);
