@@ -54,6 +54,10 @@ static void gen_addr(Node *node) {
   case ND_DEREF:
     gen_expr(node->lhs);
     return;
+  case ND_COMMA:
+    gen_expr(node->lhs);
+    gen_addr(node->rhs);
+    return;
   }
 
   error_tok(node->tok, "not an lvalue");
@@ -119,6 +123,10 @@ static void gen_expr(Node *node) {
     for (Node *n = node->body; n; n = n->next)
       gen_stmt(n);
     return;
+  case ND_COMMA:
+    gen_expr(node->lhs);
+    gen_expr(node->rhs);
+    return;
   case ND_FUNCALL: {
     int nargs = 0;
     for (Node *arg = node->args; arg; arg = arg->next) {
@@ -179,7 +187,7 @@ static void gen_expr(Node *node) {
 
 static void gen_stmt(Node *node) {
   println("   .loc 1 %d", node->tok->line_no);
-  
+
   switch (node->kind) {
   case ND_IF: {
     int c = count();
