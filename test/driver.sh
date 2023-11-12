@@ -1,5 +1,5 @@
-#!/bin/sh
-tmp=`mktemp -d /tmp/sodium-test-XXXXXX`
+#!/bin/bash
+tmp=`mktemp -d /tmp/complier-test-XXXXXX`
 trap 'rm -rf $tmp' INT TERM HUP EXIT
 echo > $tmp/empty.c
 
