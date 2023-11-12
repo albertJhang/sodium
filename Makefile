@@ -1,16 +1,17 @@
-CFLAGS=-std=c11 -g -static -fno-common
+CFLAGS=-std=c11 -g -fno-common
 SRCS=$(wildcard *.c)
 OBJS=$(SRCS:.c=.o)
 
-sodium:	$(OBJS)
-		$(CC) -o $@ $(OBJS) $(LDFLAGS)
+sodium: $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 $(OBJS): sodium.h
 
-test:	sodium
-		./test.sh
+test: sodium
+	./test.sh
+	./test-driver.sh
 
 clean:
-		rm -f sodium *.o *~ tmp*
+	rm -f sodium *.o *~ tmp*
 
 .PHONY: test clean

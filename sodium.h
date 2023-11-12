@@ -1,188 +1,189 @@
-#define _GNU_SOURCE
+#define _POSIX_C_SOURCE 200809L
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 typedef struct Type Type;
+typedef struct Node Node;
 
 //
-//標記解析器 Tokenizer.c
+// strings.c
 //
 
-// 標記 Token
-typedef enum{
-    TK_RESERVED,// 關鍵字或標點符號 Keywords or punctuators
-    TK_IDENT,   // 身份識別 Identifiers
-    TK_STR,     // 字串文字 String literals
-    TK_NUM,     // 整數文字 Integer literals
-    TK_EOF,     // 文件結束標記 End-of-file markers
+char *format(char *fmt, ...);
+
+//
+// tokenize.c
+//
+
+// Token
+typedef enum {
+  TK_IDENT,   // Identifiers
+  TK_PUNCT,   // Punctuators
+  TK_KEYWORD, // Keywords
+  TK_STR,     // String literals
+  TK_NUM,     // Numeric literals
+  TK_EOF,     // End-of-file markers
 } TokenKind;
 
-//標記型態 Token type
+// Token type
 typedef struct Token Token;
-struct Token{
-    TokenKind kind; //標記種類 Token kind
-    Token *next;    //下一個輸入標記 Next token
-    int val;        //如果kind為TK_NUM，則為數值 If kind is TK_NUM, it's value
-    char *str;      //標記文字列 Token string
-    int len;        //標記長度 Token length
-
-    char *contents; //字串文字內容，包括終止"\0" String literal contents including terminating '\0'
-    char cont_len;  // string literal langth
+struct Token {
+  TokenKind kind; // Token kind
+  Token *next;    // Next token
+  int val;        // If kind is TK_NUM, its value
+  char *loc;      // Token location
+  int len;        // Token length
+  Type *ty;       // Used if TK_STR
+  char *str;      // String literal contents including terminating '\0'
 };
 
 void error(char *fmt, ...);
 void error_at(char *loc, char *fmt, ...);
 void error_tok(Token *tok, char *fmt, ...);
-Token *peek(char *s);
-Token *consume(char *op);
-Token *consume_ident(void);
-void expect(char *op);
-long expect_number(void);
-char *expect_ident(void);
-bool at_eof(void);
-Token *tokenize(void);
-
-extern char *filename;
-extern char *user_input;
-extern Token *token;
+bool equal(Token *tok, char *op);
+Token *skip(Token *tok, char *op);
+bool consume(Token **rest, Token *tok, char *str);
+Token *tokenize_file(char *filename);
 
 //
-// 分析器 parse.c
+// parse.c
 //
 
-// Variable
-typedef struct Var Var;
-struct Var {
-    char *name;     // 變數名稱 Variable name
-    Type *ty;       // Type
-    bool is_local;  // local or global
+// Variable or function
+typedef struct Obj Obj;
+struct Obj {
+  Obj *next;
+  char *name;    // Variable name
+  Type *ty;      // Type
+  bool is_local; // local or global/function
 
-    // Local variable
-    int offset; // 與RBP的偏移 Offset from RBP
+  // Local variable
+  int offset;
 
-    // 全域變數 Global variable
-    char *contents;
-    int cont_len; 
+  // Global variable or function
+  bool is_function;
+
+  // Global variable
+  char *init_data;
+
+  // Function
+  Obj *params;
+  Node *body;
+  Obj *locals;
+  int stack_size;
 };
 
-typedef struct VarList VarList;
-struct VarList {
-    VarList *next;
-    Var *var;
-};
-
-//AST node
+// AST node
 typedef enum {
-    ND_ADD,         // num + num
-    ND_PTR_ADD,     // ptr +num or num +ptr
-    ND_SUB,         // num - num
-    ND_PTR_SUB,     // ptr - num
-    ND_PTR_DIFF,    // ptr -ptr
-    ND_MUL,         // *
-    ND_DIV,         // /
-    ND_EQ,          // ==
-    ND_NE,          // !=
-    ND_LT,          // <
-    ND_LE,          // <=
-    ND_ASSIGN,      // =
-    ND_ADDR,        // unary &
-    ND_DEREF,       // unary * 
-    ND_RETURN,      // "return"
-    ND_IF,          // "if"
-    ND_WHILE,       // "while"
-    ND_FOR,         // "for"
-    ND_BLOCK,       // "block"
-    ND_FUNCALL,     // Function call
-    ND_EXPR_STMT,   // 表達語句 Expression statement
-    ND_STMT_EXPR,   // 語句表達式 Statement expression  
-    ND_VAR,         // 變數 Variable
-    ND_NUM,         // 整數
-    ND_NULL,        // 空聲明 Empty statement
+  ND_ADD,       // +
+  ND_SUB,       // -
+  ND_MUL,       // *
+  ND_DIV,       // /
+  ND_NEG,       // unary -
+  ND_EQ,        // ==
+  ND_NE,        // !=
+  ND_LT,        // <
+  ND_LE,        // <=
+  ND_ASSIGN,    // =
+  ND_ADDR,      // unary &
+  ND_DEREF,     // unary *
+  ND_RETURN,    // "return"
+  ND_IF,        // "if"
+  ND_FOR,       // "for" or "while"
+  ND_BLOCK,     // { ... }
+  ND_FUNCALL,   // Function call
+  ND_EXPR_STMT, // Expression statement
+  ND_STMT_EXPR, // Statement expression
+  ND_VAR,       // Variable
+  ND_NUM,       // Integer
 } NodeKind;
 
-//AST 節點類型
-typedef struct Node Node;
+// AST node type
 struct Node {
-    NodeKind kind; // 節點種類
-    Node *next;    // 下個節點
-    Type *ty;      // 類型，例如int或指向int的指針Type, e.g. int ot pointer to int 
-    Token *tok;    // 代表標記 Representative token
+  NodeKind kind; // Node kind
+  Node *next;    // Next node
+  Type *ty;      // Type, e.g. int or pointer to int
+  Token *tok;    // Representative token
 
-    Node *lhs;     // 左手邊
-    Node *rhs;     // 右手邊
+  Node *lhs;     // Left-hand side
+  Node *rhs;     // Right-hand side
 
-    // "if", "while" or "for" 表達式
-    Node *cond;
-    Node *then;
-    Node *els;
-    Node *init;
-    Node *inc;
+  // "if" or "for" statement
+  Node *cond;
+  Node *then;
+  Node *els;
+  Node *init;
+  Node *inc;
 
-    // 區塊 或 語句表達式 Bolck or statement expression
-    Node *body;
+  // Block or statement expression
+  Node *body;
 
-    // 函數呼叫
-    char *funcname;
-    Node *args;
+  // Function call
+  char *funcname;
+  Node *args;
 
-    Var *var;      // 如果 kind == ND_VAR 則使用 Used if kind == ND_VAR
-    long val;      // 如果 kind == ND_NUM 則使用 Used if kind == ND_NUM
+  Obj *var;      // Used if kind == ND_VAR
+  int val;       // Used if kind == ND_NUM
 };
 
-typedef struct Function Function;
-struct Function {
-    Function *next;
-    char *name;
-    VarList *params;
-
-    Node *node;
-    VarList *locals;
-    int stack_size;
-};
-
-typedef struct {
-    VarList *globals;
-    Function *fns;
-} Program;
-
-Program *program(void);
+Obj *parse(Token *tok);
 
 //
-// typing.c
+// type.c
 //
 
-typedef enum { 
-    
-    TY_CHAR, 
-    TY_INT,
-    TY_PTR, 
-    TY_ARRAY, 
+typedef enum {
+  TY_CHAR,
+  TY_INT,
+  TY_PTR,
+  TY_FUNC,
+  TY_ARRAY,
 } TypeKind;
 
 struct Type {
-    TypeKind kind;
-    int size;       // sizeof() value
-    Type *base;
-    int array_len;
+  TypeKind kind;
+  int size;      // sizeof() value
+
+  // Pointer-to or array-of type. We intentionally use the same member
+  // to represent pointer/array duality in C.
+  //
+  // In many contexts in which a pointer is expected, we examine this
+  // member instead of "kind" member to determine whether a type is a
+  // pointer or not. That means in many contexts "array of T" is
+  // naturally handled as if it were "pointer to T", as required by
+  // the C spec.
+  Type *base;
+
+  // Declaration
+  Token *name;
+
+  // Array
+  int array_len;
+
+  // Function type
+  Type *return_ty;
+  Type *params;
+  Type *next;
 };
 
-extern Type *char_type;
-extern Type *int_type;
+extern Type *ty_char;
+extern Type *ty_int;
 
 bool is_integer(Type *ty);
+Type *copy_type(Type *ty);
 Type *pointer_to(Type *base);
+Type *func_type(Type *return_ty);
 Type *array_of(Type *base, int size);
 void add_type(Node *node);
 
 //
-//指令產生器 codegen.c
+// codegen.c
 //
 
-void codegen(Program *prog);
+void codegen(Obj *prog, FILE *out);

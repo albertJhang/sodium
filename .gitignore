@@ -1,4 +1,7 @@
-*~
-*.o
-tmp*
-sodium
+**/*~
+**/\#*
+**/*.o
+**/*.s
+**/a.out
+/tmp*
+/sodium
