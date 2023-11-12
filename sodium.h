@@ -98,6 +98,7 @@ typedef enum {
     ND_BLOCK,       // "block"
     ND_FUNCALL,     // Function call
     ND_EXPR_STMT,   // 表達語句 Expression statement
+    ND_STMT_EXPR,   // 語句表達式 Statement expression  
     ND_VAR,         // 變數 Variable
     ND_NUM,         // 整數
     ND_NULL,        // 空聲明 Empty statement
@@ -120,8 +121,8 @@ struct Node {
     Node *els;
     Node *init;
     Node *inc;
-    
-    //Block
+
+    // 區塊 或 語句表達式 Bolck or statement expression
     Node *body;
 
     // 函數呼叫
