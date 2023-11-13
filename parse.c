@@ -54,6 +54,7 @@ static Obj *globals;
 
 static Scope *scope = &(Scope){};
 
+static bool is_typename(Token *tok);
 static Type *declspec(Token **rest, Token *tok);
 static Type *declarator(Token **rest, Token *tok, Type *ty);
 static Node *declaration(Token **rest, Token *tok);
@@ -198,41 +199,90 @@ static void push_tag_scope(Token *tok, Type *ty) {
   scope->tags = sc;
 }
 
-// declspec = "char" | "short" | "int" | "long" 
-//          | struct-decl | union-decl
+// declspec = ("void" | "char" | "short" | "int" | "long"
+// | 結構聲明 | 聯合聲明)+
+//
+// 類型說明符中類型名的順序並不重要。 為了
+// 例如，「int long static」與「static long int」意思相同。
+// 也可以寫成 `static long` 因為你可以省略
+// 如果指定了“long”或“short”，則為“int”。 然而，像
+// `char int` 不是有效的型別說明符。 我們只需要接受一個
+// 類型名稱的有限組合。
+//
+// 在此函數中，我們計算每個類型名稱出現的次數
+// 同時保留類型命名的「目前」類型對象
+// 直到該點代表。 當我們到達非類型名稱標記時，
+// 我們傳回目前類型物件。
+//
 static Type *declspec(Token **rest, Token *tok) {
-  if (equal(tok, "void")) {
-    *rest = tok->next;
-    return ty_void;
-  }
+// 我們使用單一整數作為所有類型名稱的計數器。
+   // 例如，位元 0 和 1 代表我們看到了多少次
+   // 到目前為止關鍵字「void」。 這樣，我們就可以使用 switch 語句
+   // 正如你在下面看到的。
+  enum {
+    VOID = 1 << 0,
+    CHAR = 1 << 2,
+    SHORT = 1 << 4,
+    INT = 1 << 6,
+    LONG = 1 << 8,
+    OTHER = 1 << 10,
+  };
 
-  if (equal(tok, "char")) {
-    *rest = tok->next;
-    return ty_char;
-  }
+  Type *ty = ty_int;
+  int counter = 0;
 
-  if (equal(tok, "short")) {
-    *rest = tok->next;
-    return ty_short;
-  }
+  while (is_typename(tok)) {
+    // 處理使用者定義的類型。
+    if (equal(tok, "struct") || equal(tok, "union")) {
+      if (equal(tok, "struct"))
+        ty = struct_decl(&tok, tok->next);
+      else
+        ty = union_decl(&tok, tok->next);
+      counter += OTHER;
+      continue;
+    }
   
-  if (equal(tok, "int")) {
-    *rest = tok->next;
-    return ty_int;
+  // 處理內建類型。
+    if (equal(tok, "void"))
+      counter += VOID;
+    else if (equal(tok, "char"))
+      counter += CHAR;
+    else if (equal(tok, "short"))
+      counter += SHORT;
+    else if (equal(tok, "int"))
+      counter += INT;
+    else if (equal(tok, "long"))
+      counter += LONG;
+    else
+      unreachable();
+
+    switch (counter) {
+    case VOID:
+      ty = ty_void;
+      break;
+    case CHAR:
+      ty =ty_char;
+      break;
+    case SHORT:
+    case SHORT + INT:
+      ty = ty_short;
+      break;
+    case INT:
+      ty = ty_int;
+      break;
+    case LONG:
+    case LONG + INT:
+      ty = ty_long;
+      break;
+    default:
+      error_tok(tok, "invalid type");   
+    } 
+   
+    tok = tok->next;
   }
 
-  if (equal(tok, "long")) {
-    *rest = tok->next;
-    return ty_long;
-  }
-
-  if (equal(tok, "struct"))
-    return struct_decl(rest, tok->next);
-
-  if (equal(tok, "union"))
-    return union_decl(rest, tok->next);
-
-  error_tok(tok, "typename expected");
+  *rest = tok;
+  return ty;
 }
 
 // func-params = (param ("," param)*)? ")"
