@@ -44,6 +44,10 @@ int g1;
 int *g1_ptr() { return &g1; }
 char int_to_char(int x) {return x;}
 
+int div_long(long a, long b) {
+  return a / b;
+} 
+
 int main() {
   ASSERT(3, ret3());
   ASSERT(8, add2(3, 5));
