@@ -177,7 +177,7 @@ static void gen_expr(Node *node) {
 
   if (node->lhs->ty->kind == TY_LONG || node->lhs->ty->base) {
     ax = "%rax";
-    di = "%dri";
+    di = "%rdi";
   } else {
     ax = "%eax";
     di = "%edi";
@@ -185,7 +185,7 @@ static void gen_expr(Node *node) {
 
   switch (node->kind) {
   case ND_ADD:
-    println("  add %%s, %s", di, ax);
+    println("  add %s, %s", di, ax);
     return;
   case ND_SUB:
     println("  sub %s, %s", di, ax);
@@ -194,11 +194,11 @@ static void gen_expr(Node *node) {
     println("  imul %s, %s", di, ax);
     return;
   case ND_DIV:
-    if (node->lhs->ty->size = = 8)
+    if (node->lhs->ty->size == 8)
       println("  cqo");
     else
-      println(" cbq");
-    println("  idiv %%rdi");
+      println(" cdq");
+    println("  idiv %s", di);
     return;
   case ND_EQ:
   case ND_NE:
