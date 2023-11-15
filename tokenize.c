@@ -165,17 +165,16 @@ static int read_escaped_char(char **new_pos, char *p) {
 
   *new_pos = p + 1;
 
-  // Escape sequences are defined using themselves here. E.g.
-  // '\n' is implemented using '\n'. This tautological definition
-  // works because the compiler that compiles our compiler knows
-  // what '\n' actually is. In other words, we "inherit" the ASCII
-  // code of '\n' from the compiler that compiles our compiler,
-  // so we don't have to teach the actual code here.
-  //
-  // This fact has huge implications not only for the correctness
-  // of the compiler but also for the security of the generated code.
-  // For more info, read "Reflections on Trusting Trust" by Ken Thompson.
-  // https://github.com/rui314/chibicc/wiki/thompson1984.pdf
+   //此處使用轉義序列本身進行定義。 例如。
+   // '\n' 是使用 '\n' 實現的。 這個同義反覆的定義
+   // 有效是因為編譯我們的編譯器的編譯器知道
+   // '\n' 實際上是什麼。 換句話說，我們「繼承」了 ASCII
+   // '\n' 的程式碼來自編譯我們的編譯器的編譯器，
+   // 所以我們不必在這裡教實際的程式碼。
+   // This fact has huge implications not only for the correctness
+   // of the compiler but also for the security of the generated code.
+   // For more info, read "Reflections on Trusting Trust" by Ken Thompson.
+   // https://github.com/rui314/chibicc/wiki/thompson1984.pdf
   switch (*p) {
   case 'a': return '\a';
   case 'b': return '\b';
@@ -217,6 +216,26 @@ static Token *read_string_literal(char *start) {
   Token *tok = new_token(TK_STR, start, end + 1);
   tok->ty = array_of(ty_char, len + 1);
   tok->str = buf;
+  return tok;
+}
+
+static Token *read_char_literal(char *start) {
+  char *p = start + 1;
+  if (*p == '\0')
+    error_at(start, "unclosed char literal");
+
+  char c;
+  if (*p == '\\')
+    c = read_escaped_char(&p, p + 1);
+  else
+    c = *p++;
+
+  char *end = strchr(p, '\'');
+  if (!end)
+    error_at(p, "unclosed char lieral");
+
+  Token *tok = new_token(TK_NUM, start, end + 1);
+  tok->val = c;
   return tok;
 }
 
@@ -288,6 +307,13 @@ static Token *tokenize(char *filename, char *p) {
       continue;
     }
 
+    // Character literal
+    if (*p == '\'') {
+     cur = cur->next = read_char_literal(p);
+     p += cur->len;
+     continue;
+    }
+    
     // Identifier or keyword
     if (is_ident1(*p)) {
       char *start = p;
