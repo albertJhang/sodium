@@ -277,7 +277,6 @@ static Type *declspec(Token **rest, Token *tok, VarAttr *attr) {
 
   while (is_typename(tok)) {
     //Handle storage class specifier.
-    // 處理"typedef"關鍵字
     if (equal(tok, "typedef") || equal(tok, "static")) {
       if (!attr)
         error_tok(tok, "storage class specifier is not allowed in this context");
@@ -577,8 +576,15 @@ static Node *stmt(Token **rest, Token *tok) {
   if (equal(tok, "for")) {
     Node *node = new_node(ND_FOR, tok);
     tok = skip(tok->next, "(");
+    
+    enter_scope();
 
-    node->init = expr_stmt(&tok, tok);
+    if (is_typename(tok)) {
+      Type *basety = declspec(&tok, tok, NULL);
+      node->init = declaration(&tok, tok, basety);
+    } else {
+      node->init = expr_stmt(&tok, tok);
+    }
 
     if (!equal(tok, ";"))
       node->cond = expr(&tok, tok);
@@ -589,6 +595,7 @@ static Node *stmt(Token **rest, Token *tok) {
     tok = skip(tok, ")");
 
     node->then = stmt(rest, tok);
+    leave_scope();
     return node;
   }
 
