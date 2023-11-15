@@ -107,7 +107,6 @@ void add_type(Node *node) {
     node->ty = ty;
     return;
   }
-
   case ND_ASSIGN:
     if (node->lhs->ty->kind == TY_ARRAY)
       error_tok(node->lhs->tok, "not an lvalue");
@@ -127,6 +126,9 @@ void add_type(Node *node) {
     return;
   case ND_NOT:
     node->ty = ty_int;
+    return;
+  case ND_BITNOT:
+    node->ty = node->lhs->ty;
     return;
   case ND_VAR:
     node->ty = node->var->ty;
