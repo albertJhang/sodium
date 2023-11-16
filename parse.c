@@ -1048,7 +1048,6 @@ static void struct_members(Token **rest, Token *tok, Type *ty) {
 static Type *struct_union_decl(Token **rest, Token *tok) {
   //Read a tag.
   Token *tag = NULL;
-  
   if (tok->kind == TK_IDENT) {
     tag = tok;
     tok = tok->next;
