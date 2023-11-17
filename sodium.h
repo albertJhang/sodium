@@ -144,9 +144,10 @@ struct Node {
   Node *init;
   Node *inc;
 
-  // "break" label
+  // "break" and "contiune" labels
   char *brk_label;
-  
+  char *cont_label;
+
   // Block or statement expression
   Node *body;
 
