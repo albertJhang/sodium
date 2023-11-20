@@ -715,6 +715,18 @@ static void initializer2(Token **rest, Token *tok, Initializer *init) {
   }
 
   if (init->ty->kind == TY_STRUCT) {
+    // 一個結構體可以用另一個結構體來初始化。 例如。
+    // `struct T x = y;` 其中 y 是 `struct T` 類型的變數。
+    // 先處理這種情況。
+    if (!equal(tok, "{")) {
+      Node *expr = assign(rest, tok);
+      add_type(expr);
+      if (expr->ty->kind == TY_STRUCT) {
+        init->expr = expr;
+        return;
+      }
+    }
+
     struct_initializer(rest, tok, init);
     return;
   }
@@ -755,7 +767,7 @@ static Node *init_desg_expr(InitDesg *desg, Token *tok) {
       return node;
     }
 
-    if (ty->kind == TY_STRUCT) {
+    if (ty->kind == TY_STRUCT && !init->expr) {
       Node *node = new_node(ND_NULL_EXPR, tok);
 
       for (Member *mem = ty->members; mem; mem = mem->next) {
