@@ -1,20 +1,20 @@
-// This file contains a recursive descent parser for C.
+// 此檔案包含 C 的遞歸下降解析器。
 //
-// Most functions in this file are named after the symbols they are
-// supposed to read from an input token list. For example, stmt() is
-// responsible for reading a statement from a token list. The function
-// then construct an AST node representing a statement.
+// 該檔案中的大多數函數均以其符號命名
+// 應該從輸入標記清單中讀取。 例如，stmt() 是
+// 負責從令牌清單中讀取語句。 功能
+// 然後建構一個表示語句的 AST 節點。
 //
-// Each function conceptually returns two values, an AST node and
-// remaining part of the input tokens. Since C doesn't support
-// multiple return values, the remaining tokens are returned to the
-// caller via a pointer argument.
+// 每個函數在概念上傳回兩個值，一個 AST 節點和
+// 輸入標記的剩餘部分。 由於C不支持
+// 多個回傳值，剩餘的token回傳給
+// 透過指標參數呼叫者。
 //
-// Input tokens are represented by a linked list. Unlike many recursive
-// descent parsers, we don't have the notion of the "input token stream".
-// Most parsing functions don't change the global state of the parser.
-// So it is very easy to lookahead arbitrary number of tokens in this
-// parser.
+// 輸入標記由鍊錶表示。 與許多遞迴不同
+// 下降解析器，我們沒有「輸入令牌流」的概念。
+// 大多數解析函數不會改變解析器的全域狀態。
+// 因此很容易在其中向前找到任意數量的標記
+// 解析器。
 
 #include "sodium.h"
 
@@ -91,6 +91,7 @@ static Node *expr_stmt(Token **rest, Token *tok);
 static Node *expr(Token **rest, Token *tok);
 static Node *assign(Token **rest, Token *tok);
 static Node *logor(Token **rest, Token *tok);
+static int64_t const_expr(Token **rest, Token *tok);
 static Node *conditional(Token **rest, Token *tok);
 static Node *logand(Token **rest, Token *tok);
 static Node *equality(Token **rest, Token *tok);
@@ -249,12 +250,6 @@ static Type *find_typedef(Token *tok) {
   return NULL;
 }
 
-static long get_number(Token *tok) {
-  if (tok->kind != TK_NUM)
-    error_tok(tok, "expected a number");
-  return tok->val;
-}
-
 static void push_tag_scope(Token *tok, Type *ty) {
   TagScope *sc = calloc(1, sizeof(TagScope));
   sc->name = strndup(tok->loc, tok->len);
@@ -263,10 +258,10 @@ static void push_tag_scope(Token *tok, Type *ty) {
   scope->tags = sc;
 }
 
-// declspec = ("void" | "char" | "short" | "int" | "long"
-//                    | "typedef" | "static"
+// declspec = ("void" | "char"      | "short"    | "int" | "long"
+//                    | "typedef"   | "static"
 //                    | struct-decl | union-decl | typedef-name)
-//                     | enum_specifier)+
+//                    | enum_specifier)+
 //
 // 類型說明符中類型名的順序並不重要。 為了
 // 例如，「int long static」與「static long int」意思相同。
@@ -280,7 +275,7 @@ static void push_tag_scope(Token *tok, Type *ty) {
 // 直到該點代表。 當我們到達非類型名稱標記時，
 // 我們傳回目前類型物件。
 static Type *declspec(Token **rest, Token *tok, VarAttr *attr) {
-// 我們使用單一整數作為所有類型名稱的計數器。
+   // 我們使用單一整數作為所有類型名稱的計數器。
    // 例如，位元 0 和 1 代表我們看到了多少次
    // 到目前為止關鍵字「void」。 這樣，我們就可以使用 switch 語句
    // 正如你在下面看到的。
@@ -415,15 +410,15 @@ static Type *func_params(Token **rest, Token *tok, Type *ty) {
   return ty;
 }
 
-// array-dimensions = ? "]" type-suffix
+// array-dimensions = const-expr? "]" type-suffix
 static Type *array_dimensions(Token **rest, Token *tok, Type *ty) {
   if (equal(tok, "]")) {
     ty = type_suffix(rest, tok->next, ty);
     return array_of(ty, -1);
   }
 
-  int sz = get_number(tok);
-  tok = skip(tok->next, "]");
+  int sz = const_expr(&tok, tok);
+  tok = skip(tok, "]");
   ty = type_suffix(rest, tok, ty);
   return array_of(ty, sz);
 }
@@ -524,10 +519,8 @@ static Type *enum_specifier(Token **rest, Token *tok) {
     char *name = get_ident(tok);
     tok = tok->next;
 
-    if (equal(tok, "=")) {
-      val = get_number(tok->next);
-      tok = tok->next->next;
-    }
+    if (equal(tok, "="))
+      val = const_expr(&tok, tok->next);
 
     VarScope *sc = push_scope(name);
     sc->enum_ty = ty;
@@ -590,7 +583,7 @@ static bool is_typename(Token *tok) {
 // stmt = "return" expr ";"
 //      | "if" "(" expr ")" stmt ("else" stmt)?
 //      | "switch" "(" expr ")" stmt
-//      | "case" num ":" stmt
+//      | "case" const-expr ":" stmt
 //      | "default" ":" stmt
 //      | "for" "(" expr-stmt expr? ";" expr? ")" stmt
 //      | "while" "(" expr ")" stmt
@@ -645,10 +638,10 @@ static Node *stmt(Token **rest, Token *tok) {
   if (equal(tok, "case")) {
     if (!current_switch)
       error_tok(tok, "stray case");
-    int val = get_number(tok->next);
 
     Node *node = new_node(ND_CASE, tok);
-    tok = skip(tok->next->next, ":");
+    int val = const_expr(&tok, tok->next);
+    tok = skip(tok, ":");
     node->label = new_unique_name();
     node->lhs = stmt(rest, tok);
     node->val = val;
@@ -818,6 +811,74 @@ static Node *expr(Token **rest, Token *tok) {
 
     *rest = tok;
     return node;
+}
+
+// 將給定節點計算為常數表達式。
+static int64_t eval(Node *node) {
+  add_type(node);
+
+  switch (node->kind) {
+  case ND_ADD:
+    return eval(node->lhs) + eval(node->rhs);
+  case ND_SUB:
+    return eval(node->lhs) - eval(node->rhs);
+  case ND_MUL:
+    return eval(node->lhs) * eval(node->rhs);
+  case ND_DIV:
+    return eval(node->lhs) / eval(node->rhs);
+  case ND_NEG:
+    return -eval(node->lhs);
+  case ND_MOD:
+    return eval(node->lhs) % eval(node->rhs);
+  case ND_BITAND:
+    return eval(node->lhs) & eval(node->rhs);
+  case ND_BITOR:
+    return eval(node->lhs) | eval(node->rhs);
+  case ND_BITXOR:
+    return eval(node->lhs) ^ eval(node->rhs);
+  case ND_SHL:
+    return eval(node->lhs) << eval(node->rhs);
+  case ND_SHR:
+    return eval(node->lhs) >> eval(node->rhs);
+  case ND_EQ:
+    return eval(node->lhs) == eval(node->rhs);
+  case ND_NE:
+    return eval(node->lhs) != eval(node->rhs);
+  case ND_LT:
+    return eval(node->lhs) < eval(node->rhs);
+  case ND_LE:
+    return eval(node->lhs) <= eval(node->rhs);
+  case ND_COND:
+    return eval(node->cond) ? eval(node->then) : eval(node->els);
+  case ND_COMMA:
+    return eval(node->rhs);
+  case ND_NOT:
+    return !eval(node->lhs);
+  case ND_BITNOT:
+    return ~eval(node->lhs);
+  case ND_LOGAND:
+    return eval(node->lhs) && eval(node->rhs);
+  case ND_LOGOR:
+    return eval(node->lhs) || eval(node->rhs);
+  case ND_CAST:
+    if (is_integer(node->ty)) {
+      switch (node->ty->size) {
+      case 1: return (uint8_t)eval(node->lhs);
+      case 2: return (uint16_t)eval(node->lhs);
+      case 4: return (uint32_t)eval(node->lhs);
+      }
+    }
+    return eval(node->lhs);
+  case ND_NUM:
+    return node->val;
+  }
+
+  error_tok(node->tok, "not a compile-time constant");
+}
+
+static int64_t const_expr(Token **rest, Token *tok) {
+  Node *node = conditional(rest, tok);
+  return eval(node);
 }
 
 // Convert `A op= B` to `tmp =&A, *tmp = *tmp op B`
