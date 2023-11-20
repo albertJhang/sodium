@@ -58,7 +58,7 @@ typedef struct {
 // 此結構代表變數初始值設定項。 由於初始化器
 // 可以嵌套（例如`int x[2][2] = {{1, 2}, {3, 4}}`），這個結構體
 // 是一個樹狀資料結構。
-typedef struct Tnitializer Tnitializer;
+typedef struct Initializer Initializer;
 struct Initializer {
   Initializer *next;
   Type *ty;
@@ -591,7 +591,7 @@ static Node *declaration(Token **rest, Token *tok, Type *basety) {
       error_tok(tok, "variable declared void");
 
     Obj *var = new_lvar(get_ident(ty->name), ty);
-    if (!equal(tok, "=")) {
+    if (equal(tok, "=")) {
       Node *expr = lvar_initializer(&tok, tok->next, var);
       cur = cur->next = new_unary(ND_EXPR_STMT, expr, tok);
     }
@@ -609,7 +609,7 @@ static void initializer2(Token **rest, Token *tok, Initializer *init) {
   if (init->ty->kind == TY_ARRAY) {
     tok = skip(tok, "{");
 
-    for (init i = 0; i < init->ty->array_len; i++) {
+    for (int i = 0; i < init->ty->array_len; i++) {
       if (i > 0)
         tok = skip(tok, ",");
       initializer2(&tok, tok, init->children[i]);
@@ -630,17 +630,19 @@ static Initializer *initializer(Token **rest, Token *tok, Type *ty) {
 static Node *init_desg_expr(InitDesg *desg, Token *tok) {
   if (desg->var)
     return new_var_node(desg->var, tok);
+
   Node *lhs = init_desg_expr(desg->next, tok);
   Node *rhs = new_num(desg->idx, tok);
   return new_unary(ND_DEREF, new_add(lhs, rhs, tok), tok);
+}
 
   static Node *create_lvar_init(Initializer *init, Type *ty, InitDesg *desg, Token *tok) {
     if (ty->kind == TY_ARRAY) {
       Node *node =new_node(ND_NULL_EXPR, tok);
       for (int i = 0; i < ty->array_len; i++) {
-        IinitDesg desg2 = {desg, i};
+        InitDesg desg2 = {desg, i};
         Node *rhs = create_lvar_init(init->children[i], ty->base, &desg2, tok);
-        node = nes_binary(ND_COMMA, node, rhs, tok);
+      node = new_binary(ND_COMMA, node, rhs, tok);
       }
       return node;
     }
