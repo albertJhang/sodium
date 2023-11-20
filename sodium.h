@@ -131,6 +131,7 @@ typedef enum {
   ND_VAR,       // Variable
   ND_NUM,       // Integer
   ND_CAST,      // Type cast
+  ND_MEMZERO,   // Zero-clear a stack variable
 } NodeKind;
 
 // AST node type
@@ -208,14 +209,14 @@ struct Type {
   int size;         // sizeof() value
   int align;        // aligment
 
-  // Pointer-to or array-of type. We intentionally use the same member
-  // to represent pointer/array duality in C.
-  //
-  // In many contexts in which a pointer is expected, we examine this
-  // member instead of "kind" member to determine whether a type is a
-  // pointer or not. That means in many contexts "array of T" is
-  // naturally handled as if it were "pointer to T", as required by
-  // the C spec.
+   // 指標或陣列類型。 我們故意使用同一個成員
+   // 在 C 中表示指標/陣列對偶性。
+   //
+   // 在許多需要指標的上下文中，我們檢查這個
+   // 用member取代「kind」成員來判斷一個型別是否為a
+   // 是否為指標。 這意味著在許多情況下“T 數組”是
+   // 依照要求，自然地將其處理為“指向 T 的指標”
+   // C 規範。
   Type *base;
 
   // Declaration
