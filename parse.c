@@ -786,6 +786,14 @@ static void initializer2(Token **rest, Token *tok, Initializer *init) {
     return;
   }
 
+  if (equal(tok, "{")) {
+    // 標量變數的初始值設定項可以被包圍
+    // 大括號。 例如。 `int x = {3};`。 處理那個案子。
+    initializer2(&tok, tok->next, init);
+    *rest = skip(tok, "}");
+    return;
+  }
+
   init->expr = assign(rest, tok);
 }
 
