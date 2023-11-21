@@ -2,3 +2,5 @@
 
 void assert(int expect, int actual, char *code);
 int printf();
+int strcmp(char *p, char *q);
+int memcmp(char *p, char *q, long n);

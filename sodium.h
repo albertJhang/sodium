@@ -16,6 +16,7 @@
 typedef struct Type Type;
 typedef struct Node Node;
 typedef struct Member Member;
+typedef struct Relocation Relocation;
 
 //
 // strings.c
@@ -84,12 +85,24 @@ struct Obj {
 
   // Global variable
   char *init_data;
+  Relocation *rel;
 
   // Function
   Obj *params;
   Node *body;
   Obj *locals;
   int stack_size;
+};
+
+// 全域變數可以透過常數表達式初始化
+// 或指向另一個全域變數的指標。 該結構體代表
+// 後者。
+typedef struct Relocation Relocation;
+struct Relocation {
+  Relocation *next;
+  int offset;
+  char *label;
+  long addend;
 };
 
 // AST node
