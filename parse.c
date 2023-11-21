@@ -1706,6 +1706,12 @@ static void struct_members(Token **rest, Token *tok, Type *ty) {
     }
   }
 
+   // 如果最後一個元素是不完整型別的數組，則為
+   // 稱為「靈活陣列成員」。 它應該表現得好像
+   // 如果是一個零大小的陣列。
+  if (cur != &head && cur->ty->kind == TY_ARRAY && cur->ty->array_len < 0)  
+    cur->ty = array_of(cur->ty->base, 0);
+
   *rest = tok->next;
   ty->members = head.next;
 }
