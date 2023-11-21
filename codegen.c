@@ -174,6 +174,7 @@ static void gen_expr(Node *node) {
 
   switch (node->kind) {
   case ND_NULL_EXPR:
+    return;
   case ND_NUM:
     println("  mov $%ld, %%rax", node->val);
     return;
@@ -464,7 +465,8 @@ static void emit_data(Obj *prog) {
     if (var->is_function)
       continue;
 
-    println("  .globl %s", var->name);
+    println(" .globl %s", var->name);
+    println(" .align %d", var->ty->align);
 
     if (var->init_data) {
       println(" .data");
